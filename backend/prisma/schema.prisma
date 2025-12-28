@@ -1,0 +1,60 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+// SQLite doesn't support enums, using strings in the models instead
+
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  name      String
+  role      String   @default("CITIZEN") // SQLite doesn't support enums well, using String
+  incidents Incident[]
+  notes     Note[]
+  verifications Verification[]
+}
+
+model Incident {
+  id          String         @id @default(uuid())
+  type        String         // e.g., Fire, Accident, Medical
+  description String
+  latitude    Float
+  longitude   Float
+  mediaUrls   String         // SQLite doesn't support String array, using JSON string
+  severity    String         @default("LOW")
+  status      String         @default("PENDING")
+  userId      String
+  user        User           @relation(fields: [userId], references: [id])
+  verifications Verification[]
+  notes       Note[]
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+}
+
+model Verification {
+  id         String   @id @default(uuid())
+  incidentId String
+  userId     String
+  incident   Incident @relation(fields: [incidentId], references: [id])
+  user       User     @relation(fields: [userId], references: [id])
+  isPositive Boolean  @default(true) // true = Verified, false = Flagged
+}
+
+model Note {
+  id          String   @id @default(uuid())
+  incidentId  String
+  responderId String
+  content     String
+  incident    Incident @relation(fields: [incidentId], references: [id])
+  responder   User     @relation(fields: [responderId], references: [id])
+  createdAt   DateTime @default(now())
+}
